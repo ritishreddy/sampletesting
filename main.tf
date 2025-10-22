@@ -46,6 +46,7 @@ resource "azurerm_network_security_group" "nsg" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
+  # Allow SSH
   security_rule {
     name                       = "Allow-SSH"
     priority                   = 1001
@@ -58,6 +59,7 @@ resource "azurerm_network_security_group" "nsg" {
     destination_address_prefix  = "*"
   }
 
+  # Allow Tomcat (port 8080)
   security_rule {
     name                       = "Allow-HTTP"
     priority                   = 1002
@@ -100,19 +102,17 @@ resource "azurerm_linux_virtual_machine" "vm" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   size                = "Standard_B1s"
-  admin_username      = "azureuser"
+  admin_username      = "ritishreddy"
+  admin_password      = "Ritishreddy@20021995"
+  disable_password_authentication = false
+
   network_interface_ids = [
     azurerm_network_interface.nic[count.index].id
   ]
 
-  admin_ssh_key {
-    username   = "azureuser"
-    public_key = file("~/.ssh/id_rsa.pub")
-  }
-
   os_disk {
-    name              = "osdisk-tomcat-${count.index + 1}"
-    caching           = "ReadWrite"
+    name                 = "osdisk-tomcat-${count.index + 1}"
+    caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
 
