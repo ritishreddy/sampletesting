@@ -1,0 +1,12 @@
+---
+- name: Ping all Tomcat servers by tag
+  hosts: all
+  gather_facts: no
+  vars:
+    ansible_user: ritishreddy
+    ansible_password: "Ritishreddy@20021995"
+    ansible_connection: ssh
+  tasks:
+    - name: Ping only VMs tagged as tomcatservers
+      ansible.builtin.ping:
+      when: hostvars[inventory_hostname]['azure_tags'].get('Name') == 'tomcatservers'
