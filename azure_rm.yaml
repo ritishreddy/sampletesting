@@ -1,0 +1,7 @@
+plugin: azure.azcollection.azure_rm
+include_vm_resource_groups:
+  - Test     # change this to your RG name
+auth_source: auto
+keyed_groups:
+  - key: tags.Name
+    prefix: tag
