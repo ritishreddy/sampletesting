@@ -3,10 +3,10 @@
   hosts: all
   gather_facts: no
   vars:
-    ansible_user: ritishreddy
-    ansible_password: "Ritishreddy@20021995"
     ansible_connection: ssh
+    ansible_user: ritishreddy
+    ansible_ssh_pass: "Ritishreddy@20021995"   # or use SSH key
   tasks:
     - name: Ping only VMs tagged as tomcatservers
-      ansible.builtin.ping:
-      when: hostvars[inventory_hostname]['azure_tags'].get('Name') == 'tomcatservers'
+      ansible.builtin.ping: {}
+      when: hostvars[inventory_hostname].get('azure_tags', {}).get('Name') == 'tomcatservers'
