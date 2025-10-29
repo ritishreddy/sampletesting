@@ -14,93 +14,83 @@ provider "azurerm" {
 }
 
 # ---------------------------
-# Resource Group
+# Variables (edit these)
 # ---------------------------
-resource "azurerm_resource_group" "rg" {
-  name     = "rg-tomcat"
-  location = "Australia Central"
+variable "resource_group_name" {
+  description = "Existing Resource Group name"
+  default     = "rg-existing"
+}
+
+variable "location" {
+  description = "Azure region"
+  default     = "Australia Central"
+}
+
+variable "vnet_name" {
+  description = "Existing Virtual Network name"
+  default     = "vnet-existing"
+}
+
+variable "subnet_name" {
+  description = "Existing Subnet name"
+  default     = "subnet-existing"
 }
 
 # ---------------------------
-# Virtual Network & Subnet
+# Data sources (fetch existing resources)
 # ---------------------------
-resource "azurerm_virtual_network" "vnet" {
-  name                = "vnet-tomcat"
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+data "azurerm_resource_group" "rg" {
+  name = var.resource_group_name
 }
 
-resource "azurerm_subnet" "subnet" {
-  name                 = "subnet-tomcat"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
+data "azurerm_virtual_network" "vnet" {
+  name                = var.vnet_name
+  resource_group_name = data.azurerm_resource_group.rg.name
 }
 
-# ---------------------------
-# Network Security Group
-# ---------------------------
-resource "azurerm_network_security_group" "nsg" {
-  name                = "nsg-tomcat"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-
-  # Allow SSH
-  security_rule {
-    name                       = "Allow-SSH"
-    priority                   = 1001
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range           = "*"
-    destination_port_range      = "22"
-    source_address_prefix       = "*"
-    destination_address_prefix  = "*"
-  }
-
-  # Allow Tomcat (port 8080)
-  security_rule {
-    name                       = "Allow-HTTP"
-    priority                   = 1002
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range           = "*"
-    destination_port_range      = "8080"
-    source_address_prefix       = "*"
-    destination_address_prefix  = "*"
-  }
+data "azurerm_subnet" "subnet" {
+  name                 = var.subnet_name
+  virtual_network_name = data.azurerm_virtual_network.vnet.name
+  resource_group_name  = data.azurerm_resource_group.rg.name
 }
 
 # ---------------------------
-# Network Interfaces
+# Public IP for each VM
+# ---------------------------
+resource "azurerm_public_ip" "public_ip" {
+  count               = 2
+  name                = "tomcat-publicip-${count.index + 1}"
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+# ---------------------------
+# Network Interface
 # ---------------------------
 resource "azurerm_network_interface" "nic" {
   count               = 2
   name                = "nic-tomcat-${count.index + 1}"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   ip_configuration {
     name                          = "ipconfig-tomcat"
-    subnet_id                     = azurerm_subnet.subnet.id
+    subnet_id                     = data.azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
-  }
-
-  tags = {
-    Name = "tomcatservers"
+    public_ip_address_id          = azurerm_public_ip.public_ip[count.index].id
   }
 }
 
 # ---------------------------
-# Virtual Machines
+# Linux Virtual Machines
 # ---------------------------
 resource "azurerm_linux_virtual_machine" "vm" {
   count               = 2
   name                = "tomcat-vm-${count.index + 1}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
   size                = "Standard_B1s"
   admin_username      = "ritishreddy"
   admin_password      = "Ritishreddy@20021995"
