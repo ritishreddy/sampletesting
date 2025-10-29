@@ -18,7 +18,7 @@ provider "azurerm" {
 # ---------------------------
 variable "resource_group_name" {
   description = "Existing Resource Group name"
-  default     = "rg-existing"
+  default     = "Test"
 }
 
 variable "location" {
@@ -28,12 +28,12 @@ variable "location" {
 
 variable "vnet_name" {
   description = "Existing Virtual Network name"
-  default     = "vnet-existing"
+  default     = "vnet-australiacentral"
 }
 
 variable "subnet_name" {
   description = "Existing Subnet name"
-  default     = "subnet-existing"
+  default     = "snet-australiacentral-1"
 }
 
 # ---------------------------
